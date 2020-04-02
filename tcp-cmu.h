@@ -20,14 +20,14 @@ public:
   /**
    * Create an unbound tcp socket.
    */
-  TcpVeno (void);
+  TcpCMU (void);
 
   /**
    * \brief Copy constructor
    * \param sock the object to copy
    */
-  TcpVeno (const TcpCmu& sock);
-  virtual ~TcpCmu (void);
+  TcpCMU (const TcpCMU& sock);
+  virtual ~TcpCMU (void);
 
   virtual std::string GetName () const;
 

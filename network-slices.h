@@ -1,7 +1,7 @@
 #ifndef NETSLICES_H
 #define NETSLICES_H
 
-enum flow_type { GBR, Non-GBR };
+enum flow_type { GBR, NonGBR };
 
 #define NA 0
 
@@ -37,7 +37,7 @@ public:
 
     }
  	
- 	flow getType() { return type; }
+ 	flow_type getType() { return type; }
     float getLossRate() { return loss_rate; }
     int getMaxBurst() { return max_burst; }
     uint32_t getAverageWindow() { return average_window; }
