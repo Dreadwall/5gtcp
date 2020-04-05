@@ -30,7 +30,7 @@ NS_OBJECT_ENSURE_REGISTERED (TcpBic2);
 
 // NOTE THIS NEEDS TO BE UPDATED TO MATCH NETWORK.
 // IN PRACTICE THIS IS DONE VIA A SYSTEM CALL
-NetSlice NETSLICE_QOS = NetSlice(GBR, 0.000001, NA, 750, 300, 1000);
+NetSlice NETSLICE_QOSBIC = NetSlice(GBR, 0.000001, NA, 750, 300, 1000);
 
 
 
@@ -56,7 +56,7 @@ TcpBic2::GetTypeId (void)
                    MakeUintegerAccessor (&TcpBic2::m_maxIncr),
                    MakeUintegerChecker <uint32_t> (1))
     .AddAttribute ("LowWnd", "Threshold window size (in segments) for engaging BIC response",
-                   UintegerValue ((NETSLICE_QOS.getMinimumWindow() * 1024) / 1500),
+                   UintegerValue ((NETSLICE_QOSBIC.getMinimumWindow() * 1024) / 1500),
                    MakeUintegerAccessor (&TcpBic2::m_lowWnd),
                    MakeUintegerChecker <uint32_t> ())
     .AddAttribute ("SmoothPart", "Number of RTT needed to approach cWnd_max from "
@@ -79,8 +79,8 @@ TcpBic2::GetTypeId (void)
 TcpBic2::TcpBic2 ()
   : TcpCongestionOps (),
     m_cWndCnt (0),
-    m_lastMaxCwnd ((NETSLICE_QOS.getAverageWindow() * 1024) / 1500),
-    m_lastCwnd ((NETSLICE_QOS.getAverageWindow() * 1024) / 1500),
+    m_lastMaxCwnd ((NETSLICE_QOSBIC.getAverageWindow() * 1024) / 1500),
+    m_lastCwnd ((NETSLICE_QOSBIC.getAverageWindow() * 1024) / 1500),
     m_epochStart (Time::Min ())
 {
   NS_LOG_FUNCTION (this);
@@ -252,7 +252,7 @@ TcpBic2::GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
   NS_LOG_FUNCTION (this);
 
   uint32_t segCwnd = tcb->GetCwndInSegments ();
-  uint32_t ssThresh = NETSLICE_QOS.getMinimumWindow() * 1024;
+  uint32_t ssThresh = NETSLICE_QOSBIC.getMinimumWindow() * 1024;
 
   m_epochStart = Time::Min ();
 
@@ -289,7 +289,7 @@ TcpBic2::ReduceCwnd (Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this << tcb);
 
-  tcb->m_cWnd = std::max (std::max ((tcb->m_cWnd.Get () * 3) / 4, tcb->m_segmentSize),  (NETSLICE_QOS.getMinimumWindow() * 1024) / 1500);
+  tcb->m_cWnd = std::max (std::max ((tcb->m_cWnd.Get () * 3) / 4, tcb->m_segmentSize),  (NETSLICE_QOSBIC.getMinimumWindow() * 1024) / 1500);
 }
 
 Ptr<TcpCongestionOps>
