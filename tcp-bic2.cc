@@ -30,9 +30,9 @@ NS_OBJECT_ENSURE_REGISTERED (TcpBic2);
 
 // NOTE THIS NEEDS TO BE UPDATED TO MATCH NETWORK.
 // IN PRACTICE THIS IS DONE VIA A SYSTEM CALL
-NetSlice NETSLICE_QOSBIC = NetSlice(GBR, 0.000001, NA, 750, 300, 1000);
+NetSlice NETSLICE_QOSBIC = NetSlice(GBR, 0.000001, 10, 9, 5, 1000);
 
-
+int STARTED = 0
 
 
 
@@ -79,8 +79,8 @@ TcpBic2::GetTypeId (void)
 TcpBic2::TcpBic2 ()
   : TcpCongestionOps (),
     m_cWndCnt (0),
-    m_lastMaxCwnd ((NETSLICE_QOSBIC.getAverageWindow() * 1024) / 1500),
-    m_lastCwnd ((NETSLICE_QOSBIC.getAverageWindow() * 1024) / 1500),
+    m_lastMaxCwnd ((NETSLICE_QOSBIC.getAverageWindow() * 1024) ),
+    m_lastCwnd ((NETSLICE_QOSBIC.getAverageWindow() * 1024)),
     m_epochStart (Time::Min ())
 {
   NS_LOG_FUNCTION (this);
@@ -108,14 +108,23 @@ TcpBic2::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
   NS_LOG_FUNCTION (this << tcb << segmentsAcked);
 
-  if (tcb->m_cWnd < tcb->m_ssThresh)
-    {
-      tcb->m_cWnd += tcb->m_segmentSize;
-      segmentsAcked -= 1;
+  if(STARTED == 0){
+    tcb->m_cWnd = NETSLICE_QOSBIC.getAverageWindow() * 1024;
+    segmentsAcked = 0;
+    STARTED = 1;
+    return;
+  }
 
-      NS_LOG_INFO ("In SlowStart, updated to cwnd " << tcb->m_cWnd <<
+
+  if (tcb->m_cWnd < tcb->m_ssThresh){
+    tcb->m_cWnd = NETSLICE_QOSBIC.getAverageWindow() * 1024;
+    segmentsAcked = 0;
+
+     NS_LOG_INFO ("In SlowStart recovery, updated to cwnd " << tcb->m_cWnd <<
                    " ssthresh " << tcb->m_ssThresh);
-    }
+    return;
+  }
+
 
   if (tcb->m_cWnd >= tcb->m_ssThresh && segmentsAcked > 0)
     {
@@ -281,15 +290,22 @@ TcpBic2::GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
       NS_LOG_INFO ("More than lowWindow, ssTh= " << ssThresh);
     }
 
-  return ssThresh;
+  return NETSLICE_QOSBIC.getMinimumWindow() * 1024;;
 }
 
 void
 TcpBic2::ReduceCwnd (Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this << tcb);
+  int diff;
 
-  tcb->m_cWnd = std::max (std::max ((tcb->m_cWnd.Get () * 3) / 4, tcb->m_segmentSize),  (NETSLICE_QOSBIC.getMinimumWindow() * 1024) / 1500);
+  if(tcb->m_cWnd.Get () > (NETSLICE_QOSBIC.getAverageWindow() * 1024)){
+    tcb->m_cWnd = (tcb->m_cWnd.Get () + (NETSLICE_QOSBIC.getAverageWindow() * 1024)) / 2
+  }
+  else{
+    tcb->m_cWnd = std::max ((tcb->m_cWnd - (tcb->m_cWnd - (NETSLICE_QOSBIC.getAverageWindow() * 1024)) / 2),
+      (NETSLICE_QOSBIC.getMinimumWindow() * 1024))
+  }
 }
 
 Ptr<TcpCongestionOps>
