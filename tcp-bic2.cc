@@ -32,7 +32,7 @@ NS_OBJECT_ENSURE_REGISTERED (TcpBic2);
 // IN PRACTICE THIS IS DONE VIA A SYSTEM CALL
 NetSlice NETSLICE_QOSBIC = NetSlice(GBR, 0.000001, 10, 9, 5, 1000);
 
-int STARTED = 0
+int STARTED = 0;
 
 
 
@@ -297,14 +297,13 @@ void
 TcpBic2::ReduceCwnd (Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this << tcb);
-  int diff;
 
   if(tcb->m_cWnd.Get () > (NETSLICE_QOSBIC.getAverageWindow() * 1024)){
-    tcb->m_cWnd = (tcb->m_cWnd.Get () + (NETSLICE_QOSBIC.getAverageWindow() * 1024)) / 2
+    tcb->m_cWnd = (unsigned int) (tcb->m_cWnd.Get () + (NETSLICE_QOSBIC.getAverageWindow() * 1024)) / 2;
   }
   else{
-    tcb->m_cWnd = std::max ((tcb->m_cWnd - (tcb->m_cWnd - (NETSLICE_QOSBIC.getAverageWindow() * 1024)) / 2),
-      (NETSLICE_QOSBIC.getMinimumWindow() * 1024))
+    tcb->m_cWnd = (unsigned int) std::max ((tcb->m_cWnd.Get () - ((tcb->m_cWnd.Get () - (NETSLICE_QOSBIC.getAverageWindow() * 1024)) / 2)),
+      (NETSLICE_QOSBIC.getMinimumWindow() * 1024));
   }
 }
 
